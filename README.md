@@ -25,3 +25,9 @@ Step 2: Use the following command to run the code
 ```
 python yolo2coco.py
 ```
+
+## Limitations
+Kindly note that for keeping the code simple, certain aspects have been assumed. <br>
+Following are the points to consider...<br>
+1. The COCO format produced might be specific to NLP model required format (at least in our case, this was fed to LayoutLMv2)
+2. When creating individual and overall bounding boxes, make sure that the overall bounding box is created after individual boxes.
