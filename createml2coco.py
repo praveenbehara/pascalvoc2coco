@@ -1,3 +1,7 @@
+# This is the 1st version of the code that I developed and assumed YOLO format to be JSON.
+# Only later I realized that this is code is written to convert CreateML format to COCO format.
+# Left this code without deleting it.. This has nothing to do with PASCAL VOC to COCO format code.
+
 from distutils.command.config import config
 import json
 import os
