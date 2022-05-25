@@ -1,7 +1,6 @@
 {
-  "images_folder" : "./images",
-  "yolo_annotations_folder" : "./annotations",
-  "coco_annotations_folder" : "./coco_annotations",
-  "pytessearact_exe_path" : "C:/Program Files/Tesseract-OCR/tesseract.exe",
-  "pytesseract_configuration" : "--oem 3 --psm 6"
+    "images_dir" : "./images",
+    "pascalvoc_dir" : "./pascalvoc",
+    "coco_dir" : "./coco",
+    "show_image_parts" : "false"
 }
