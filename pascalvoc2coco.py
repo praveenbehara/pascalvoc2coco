@@ -1,11 +1,13 @@
 # Pascal VOC to COCO format
-# v0.1
+# The original code has been optimized to use a pandas dataframe to get a more compact code 
+# v0.2
 # Developed by Praveen Behara
 
 import cv2
 import json
 import glob
 import os
+import pandas as pd
 import pytesseract
 from pytesseract import Output
 import xml.etree.ElementTree as ET
@@ -55,39 +57,37 @@ def extract_text(imgfile, objects):
     img = cv2.imread(imgfile)
 
     for obj in objects:
+        # Extract coordinates for each bounding box
         x1, y1, x2, y2 = obj["box"]
         crop_img = img[y1:y2, x1:x2]
 
-        img_data = pytesseract.image_to_data(crop_img, output_type=Output.DICT, config="--psm 13")
-        non_blank_indices = [i for i, txt in enumerate(img_data["text"]) if len(txt.strip()) > 0]
+        # Invoke tessseract to perform ocr (word-level)
+        ocr_data = pytesseract.image_to_data(crop_img, output_type=Output.DICT, config="--psm 13")
 
-        words = []
-        words_list = []
-        for nb_idx in non_blank_indices:
-            word_dict = []
-            left, top, width, height = (
-                img_data["left"][nb_idx],
-                img_data["right"][nb_idx],
-                img_data["width"][nb_idx],
-                img_data["height"][nb_idx]
-            )
+        # Filter only the columns of interest for the next step
+        df = pd.DataFrame(ocr_data)[["left", "top", "width", "height", "text"]]
 
-            word_dict["box"] = [
-                x1 + left, 
-                y1 + top, 
-                x1 + left + width,
-                y1 + top + height
-            ]
+        # Drop rows with blank data
+        df = df[df["text"].str.strip() != ""].reset_index(drop=True)
 
-            word_dict["text"] = img_data["text"][nb_idx]
-            words_list.append(word_dict["text"])
-            words.append(word_dict)
+        # Since the coordinates belong to crop image, we need to add the xy coordinates of the actual box
+        df["left"], df["top"] = df["left"] + x1, df["top"] + y1
 
-            if show_image_parts:
-                show_img(img, word_dict["box"])
+        # At the same time, generate the right and bottom columns
+        df["right"], df["bottom"] = df["left"] + df["width"], df["top"] + df["height"]
 
-        obj["text"] = " ".join(words_list)
-        obj["words"]= words
+        # Any post-processing on text to be done here
+        # df.drop(columns=["width", "height"], inplace=True)
+
+        # Set the values by extracting data from all valid rows
+        obj["text"] = " ".join(df["text"].tolist().strip())
+        obj["words"] = [
+            {
+                "box" : [row["left"], row["top"], row["right"], row["bottom"]],
+                "text" : row["text"]
+            }
+            for _, row in df.iterrows()
+        ]
 
     return objects
 
