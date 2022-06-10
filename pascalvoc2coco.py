@@ -25,7 +25,7 @@ def parse_pascal_voc(xmlfile):
 
     # Process each individual object
     for obj in root.findall("object"):
-        obj_dict = []
+        obj_dict = {}
 
         # Process the name and bndbox tags
         for element in obj:
@@ -61,7 +61,7 @@ def extract_text(imgfile, objects):
         x1, y1, x2, y2 = obj["box"]
         crop_img = img[y1:y2, x1:x2]
 
-        # Invoke tessseract to perform ocr (word-level)
+        # Invoke tesseract to perform ocr (word-level)
         ocr_data = pytesseract.image_to_data(crop_img, output_type=Output.DICT, config="--psm 13")
 
         # Filter only the columns of interest for the next step
@@ -92,7 +92,7 @@ def extract_text(imgfile, objects):
     return objects
 
 """
-This adds teh additional tags needed for the COCO format
+This adds the additional tags needed for the COCO format
 """
 def add_misc_tags(all_objects):
     new_dict = {"form" : []}
@@ -107,13 +107,13 @@ Generates the output coco format file
 """
 def generate_coco_file(coco_file, objects):
     with open(coco_file, "w") as fp:
-        fp.wirte(json.dumps(objects))
+        fp.write(json.dumps(objects))
 
 """
 Finds a valid image file in the directory with the same name as the annotation file
 """
 def find_valid_image(img_dir, root_name):
-    valid_exts = ['jpg', 'png', 'gif', 'bmp']
+    valid_exts = [".jpg", ".png", ".gif", ".bmp", ".tif"]
 
     for ext in valid_exts:
         img_file = os.path.join(img_dir, root_name + ext)
@@ -145,6 +145,7 @@ Initialization function for setting the stage for the conversion of all the anno
 def pascalvoc_to_coc():
     global show_image_parts
 
+    # Load the json configuration
     with open("config.json", "r") as fp:
         config = json.load(fp)
 
@@ -160,6 +161,12 @@ def pascalvoc_to_coc():
     for xml_file in glob.glob(os.path.join(xml_dir, "*.xml")):
         file_root = os.path.splitext(os.path.split(xml_file)[1])[0]
         img_file = find_valid_image(img_dir=img_dir, root_name=file_root)
+        
+        # Skip processing the xml file if the corresponding image is not found
+        if img_file == None:
+            print(f"Image file for {xml_file} not found... Skipping processing")
+            continue
+        
         coco_file = os.path.join(coco_dir, file_root + ".json")
         print(f"Processing {img_file}...")
         process_file(xml_file=xml_file, img_file=img_file, coco_file=coco_file)
