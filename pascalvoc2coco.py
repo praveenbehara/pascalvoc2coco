@@ -38,16 +38,15 @@ def parse_pascal_voc(xmlfile):
 
     return all_objects
 
+
 """
 Shows a part of the image based on the coordinates
 """
-def show_img(img, coords):
-    x1, y1, x2, y2 = coords
-    cropped_img = img[y1:y2, x1:x2]
-    cv2.imshow("img", cropped_img)
+def show_img(crop_img):
+    cv2.imshow("img", crop_img)
     cv2.waitkey(0)
     cv2.destroyWindow("img")
-
+    
 
 """
 Extracts the individual words from the image using pytesseract
@@ -75,12 +74,12 @@ def extract_text(imgfile, objects):
 
         # At the same time, generate the right and bottom columns
         df["right"], df["bottom"] = df["left"] + df["width"], df["top"] + df["height"]
-
+        
         # Any post-processing on text to be done here
         # df.drop(columns=["width", "height"], inplace=True)
 
         # Set the values by extracting data from all valid rows
-        obj["text"] = " ".join(df["text"].tolist().strip())
+        obj["text"] = " ".join(df["text"].tolist()).strip()
         obj["words"] = [
             {
                 "box" : [row["left"], row["top"], row["right"], row["bottom"]],
@@ -88,8 +87,13 @@ def extract_text(imgfile, objects):
             }
             for _, row in df.iterrows()
         ]
+        
+        # Optional view of the cropped images
+        if(show_image_parts):
+            show_img(crop_img)
 
     return objects
+
 
 """
 This adds the additional tags needed for the COCO format
@@ -102,12 +106,14 @@ def add_misc_tags(all_objects):
         new_dict["form"].append(obj)
     return new_dict
 
+
 """
 Generates the output coco format file
 """
 def generate_coco_file(coco_file, objects):
     with open(coco_file, "w") as fp:
         fp.write(json.dumps(objects))
+
 
 """
 Finds a valid image file in the directory with the same name as the annotation file
@@ -121,6 +127,7 @@ def find_valid_image(img_dir, root_name):
             return img_file
 
     return None
+
 
 """
 This is the orchestration function that executes individual steps for one file
@@ -142,7 +149,7 @@ def process_file(xml_file, img_file, coco_file):
 Main function
 Initialization function for setting the stage for the conversion of all the annotation files
 """
-def pascalvoc_to_coc():
+def pascalvoc_to_coco():
     global show_image_parts
 
     # Load the json configuration
@@ -174,5 +181,5 @@ def pascalvoc_to_coc():
 
 # Starts here
 if __name__ == "__main__":
-    pascalvoc_to_coc()
+    pascalvoc_to_coco()
     
